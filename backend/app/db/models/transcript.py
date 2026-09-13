@@ -11,4 +11,4 @@ class Transcript(Base):
     source_url = Column(String(1024), nullable=True)
     source_type = Column(String(50), nullable=False) # 'podcast', 'newsletter'
     published_at = Column(DateTime(timezone=True), nullable=True)
-    created_at = Column(DateTime(timezone=True), server_default=func.now())\n
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

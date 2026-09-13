@@ -13,4 +13,4 @@ class Message(Base):
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    session = relationship("Session")\n
+    session = relationship("Session")

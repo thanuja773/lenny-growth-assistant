@@ -57,4 +57,4 @@ pytest
 ```
 
 ## Troubleshooting
-- If DB connection fails, ensure Docker Compose is running and `DATABASE_URL` in `.env` is correct.\n
+- If DB connection fails, ensure Docker Compose is running and `DATABASE_URL` in `.env` is correct.

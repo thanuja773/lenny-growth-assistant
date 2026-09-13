@@ -9,4 +9,4 @@ def setup_logging():
     logger = logging.getLogger("lenny_assistant")
     return logger
 
-logger = setup_logging()\n
+logger = setup_logging()

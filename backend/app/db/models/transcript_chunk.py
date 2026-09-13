@@ -17,4 +17,4 @@ class TranscriptChunk(Base):
     embedding = Column(Vector(EMBEDDING_DIM))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
-    transcript = relationship("Transcript")\n
+    transcript = relationship("Transcript")
