@@ -53,7 +53,7 @@ def test_api_retrieval_invalid_top_k():
         "/api/retrieval/search",
         json={"query": "growth", "top_k": settings.RETRIEVAL_MAX_TOP_K + 1},
     )
-    assert res2.status_code == 400
+    assert res2.status_code == 422
 
 
 def test_api_retrieval_db_failure():

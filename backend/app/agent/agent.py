@@ -270,6 +270,8 @@ class GrowthAgent:
         history_dicts = [{"role": m.role, "content": m.content} for m in history]
         
         primary_provider = request.provider or settings.LLM_PROVIDER or "ollama"
+        if primary_provider not in ["ollama", "anthropic"]:
+            raise ValueError(f"Unsupported LLM provider: {primary_provider}")
         
         state = AgentState(
             session_id=session.id,
