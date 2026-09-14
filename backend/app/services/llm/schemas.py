@@ -10,6 +10,7 @@ class SourceCitation(BaseModel):
 class ChatRequest(BaseModel):
     query: str = Field(..., min_length=1, description="The user's question to answer")
     provider: Optional[str] = Field(None, description="Optional LLM provider to use (e.g., 'ollama', 'anthropic')")
+    session_id: Optional[str] = Field(None, description="Optional UUID string for conversation session tracking")
 
 class ChatResponse(BaseModel):
     answer: str = Field(..., description="The generated grounded answer")
@@ -17,3 +18,6 @@ class ChatResponse(BaseModel):
     provider: Optional[str] = Field(None, description="The LLM provider that generated the response")
     model: Optional[str] = Field(None, description="The specific model used")
     retrieval_count: int = Field(..., description="Number of retrieved chunks provided as context")
+    session_id: Optional[str] = Field(None, description="The UUID of the session for conversation context")
+    tool_used: Optional[str] = Field(None, description="The specific tool executed by the agent, if any")
+    word_count: Optional[int] = Field(None, description="Number of words generated (primarily for content generation tasks)")

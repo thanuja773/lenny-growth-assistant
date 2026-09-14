@@ -36,17 +36,17 @@ class OllamaProvider(LLMProvider):
             data = response.json()
             answer = data.get("message", {}).get("content", "").strip()
             return answer, self.model
-        except requests.exceptions.Timeout:
-            logger.error("Ollama request timed out.")
-            raise RuntimeError("LLM request timed out")
-        except requests.exceptions.ConnectionError:
-            logger.error("Ollama connection refused.")
-            raise RuntimeError("LLM provider unavailable")
+        except requests.exceptions.Timeout as e:
+            logger.error(f"Ollama request timed out: {e}")
+            raise RuntimeError(f"LLM request timed out: {e}")
+        except requests.exceptions.ConnectionError as e:
+            logger.error(f"Ollama connection refused: {e}")
+            raise RuntimeError(f"LLM provider unavailable: Connection refused")
         except requests.exceptions.HTTPError as e:
-            logger.error(f"Ollama HTTP error: {e.response.text}")
+            logger.error(f"Ollama HTTP error: {e.response.status_code} - {e.response.text}")
             if e.response.status_code == 404:
                 raise RuntimeError(f"Ollama model '{self.model}' not found.")
-            raise RuntimeError("LLM provider error")
+            raise RuntimeError(f"LLM provider error: HTTP {e.response.status_code}")
         except Exception as e:
             logger.error(f"Ollama unknown error: {e}")
-            raise RuntimeError("LLM provider error")
+            raise RuntimeError(f"LLM provider error: {str(e)}")

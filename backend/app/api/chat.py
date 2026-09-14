@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.services.llm.schemas import ChatRequest, ChatResponse
-from app.services.llm.service import LLMService
+from app.agent.agent import GrowthAgent
 
 router = APIRouter()
 logger = logging.getLogger("lenny_assistant.api.chat")
@@ -32,8 +32,8 @@ def generate_chat_response(
         )
 
     try:
-        service = LLMService(db=db)
-        return service.generate_chat_response(request)
+        agent = GrowthAgent(db=db)
+        return agent.process_request(request)
     except ValueError as ve:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
