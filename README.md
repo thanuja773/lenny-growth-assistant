@@ -11,7 +11,7 @@ This repository contains the complete implementation up through Step 9, fulfilli
 - Llama 3 model for Ollama
 - (Optional) Python 3.10 and Node 20 if running outside Docker
 
-## Quick Start (Evaluator Setup)
+## Quick Start (Evaluator Setup).
 
 ### 1. Clone & Configuration
 Clone this repository. Then copy the `.env.example` into a `.env` file at the root:
