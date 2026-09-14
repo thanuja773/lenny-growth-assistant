@@ -1,61 +1,32 @@
-# Lenny Growth Assistant - Architecture Document
+# Frontend Architecture
 
-## System Architecture
+The frontend is a Next.js (App Router) application.
 
-The Lenny Growth Assistant is structured into clean, decoupled layers to maintain modularity, testability, and resilience.
+## 1. Page Structure
+- `app/page.tsx`: The main orchestrator holding React state (session, messages, provider).
+- `app/layout.tsx`: Root layout with Geist font definitions and metadata.
+- `app/globals.css`: Tailwind configuration and premium dark-mode theme variables.
 
-```
-┌────────────────────────────────────────────────────────┐
-│               Client / Frontend Layer                  │
-└───────────────────────────┬────────────────────────────┘
-                            │ HTTP
-┌───────────────────────────▼────────────────────────────┐
-│                    FastAPI Backend                     │
-│  ┌────────────────────┐      ┌──────────────────────┐  │
-│  │   /health Route    │      │ /api/retrieval/search│  │
-│  └────────────────────┘      └──────────┬───────────┘  │
-│                                         │              │
-│                              ┌──────────▼───────────┐  │
-│                              │   RetrievalService   │  │
-│                              └─────┬──────────┬─────┘  │
-│                                    │          │        │
-│                ┌───────────────────┘          └─────┐  │
-│                │                                    │  │
-│       ┌────────▼─────────┐                 ┌────────▼┐ │
-│       │  QueryEmbedder   │                 │Diversity│ │
-│       │ (Local MiniLM)   │                 │ Filter  │ │
-│       └──────────────────┘                 └─────────┘ │
-└───────────────────────────┬────────────────────────────┘
-                            │ SQLAlchemy (pgvector)
-┌───────────────────────────▼────────────────────────────┐
-│         PostgreSQL 16 + pgvector (Docker)              │
-│  - transcripts (metadata, source_url)                  │
-│  - transcript_chunks (content, embedding vector(384))  │
-└────────────────────────────────────────────────────────┘
-```
+## 2. Component Structure
+- **Layout**: `Sidebar`, `Topbar`, `InsightsPanel`
+- **Chat**: `ChatArea` (Markdown), `Composer`, `EmptyState`
+- **Sources**: `SourceCard`
 
-## Decoupled Pipeline Stages
+## 3. Session Flow
+On new conversation, no session ID is initially provided. On the first `sendChatMessage` request, the backend creates a session in PostgreSQL and returns `session_id`. The frontend stores this in `activeSessionId` and passes it sequentially to maintain context.
 
-1. **Step 1 - Foundation & Backend Setup**:
-   - Containerized PostgreSQL with pgvector extension.
-   - Core FastAPI application with SQLAlchemy ORM models (`transcripts`, `transcript_chunks`, `sessions`, `messages`, `artifacts`, `users`).
-   - Alembic database migration chain.
+## 4. Security Considerations
+- Backend HTML is NEVER dangerously set. We use `react-markdown`.
+- Source URLs are rendered from the backend payload.
+- No API keys (Anthropic/OpenAI) are exposed in the frontend. All generation is securely proxied through the backend `/api/chat` route.
 
-2. **Step 2 - Transcript Ingestion Pipeline**:
-   - Downloads transcripts from Lenny's podcast transcript repository.
-   - Cleans formatting while preserving speaker turns and timestamps.
-   - Chunks text into ~700-token sections with 100-token overlap.
-   - Computes 384-dimensional embeddings using `sentence-transformers/all-MiniLM-L6-v2`.
-   - Persists data idempotently into PostgreSQL keyed by `source_url`.
+## 5. Artifact Security Model
+Artifacts generated via the `generate_ship30` tool represent untrusted, dynamic output from LLMs. 
+- **Persistence**: They are securely persisted using PostgreSQL via `ArtifactManager`.
+- **Isolation**: On the frontend, the `ArtifactViewer` component uses `react-markdown` with `remarkGfm` to parse Ship 30 essays into a safe React AST.
+- **Sanitization**: Raw HTML (`dangerouslySetInnerHTML`) is entirely prohibited. Any arbitrary `<script>` tags, event handlers (`onclick`), or `javascript:` URLs are naturally discarded during parsing.
+- **Traceability**: All artifacts are fundamentally grounded to `SourceCitation` objects mapped in JSONB, completely blocking hallucinations from entering the artifact without a recorded trace.
 
-3. **Step 3 - Semantic RAG Retrieval Layer**:
-   - Encapsulates query embedding, pgvector cosine distance calculation, candidate oversampling, similarity thresholding, and lightweight diversity filtering.
-   - Decoupled completely from LLM generation (Step 4) and agent routing (Step 5).
-   - Zero external cloud dependencies or API keys required.
-   - Returns rich metadata (`source_url`, `chunk_index`, `transcript_title`, `similarity_score`) for source traceability and citation grounding.
-
-4. **Step 4 - LLM Provider & Grounding Layer (Current)**:
-   - Implements a provider-independent LLM layer (`LLMProvider` protocol) supporting Ollama (local) and Anthropic (cloud).
-   - Implements `POST /api/chat` for answering queries using a strict grounding prompt.
-   - Protects against hallucination by returning a deterministic "Insufficient evidence" message if retrieval returns zero results.
-   - Supports graceful provider fallback and rich source citation traceability.
+## 6. Current Limitations
+- No local storage caching for offline mode.
+- Ollama local inference takes multiple minutes on CPU. The UI provides a "Thinking" state to prevent frozen experiences.

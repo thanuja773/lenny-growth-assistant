@@ -8,9 +8,9 @@ class SourceCitation(BaseModel):
     similarity_score: float = Field(..., description="Normalized cosine similarity score between 0 and 1")
 
 class ChatRequest(BaseModel):
-    query: str = Field(..., min_length=1, description="The user's question to answer")
+    query: str = Field(..., min_length=1, max_length=4000, description="The user's question to answer")
     provider: Optional[str] = Field(None, description="Optional LLM provider to use (e.g., 'ollama', 'anthropic')")
-    session_id: Optional[str] = Field(None, description="Optional UUID string for conversation session tracking")
+    session_id: Optional[str] = Field(None, max_length=36, description="Optional UUID string for conversation session tracking")
 
 class ChatResponse(BaseModel):
     answer: str = Field(..., description="The generated grounded answer")
@@ -21,3 +21,15 @@ class ChatResponse(BaseModel):
     session_id: Optional[str] = Field(None, description="The UUID of the session for conversation context")
     tool_used: Optional[str] = Field(None, description="The specific tool executed by the agent, if any")
     word_count: Optional[int] = Field(None, description="Number of words generated (primarily for content generation tasks)")
+    artifact_id: Optional[str] = Field(None, description="The UUID of the generated artifact, if one was created")
+
+class ArtifactResponse(BaseModel):
+    artifact_id: str
+    session_id: str
+    title: str
+    type: str
+    format: str
+    content: str
+    word_count: Optional[int]
+    sources: List[SourceCitation]
+    created_at: str

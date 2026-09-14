@@ -12,6 +12,7 @@ from app.services.llm.ollama import OllamaProvider
 from app.services.llm.anthropic import AnthropicProvider
 
 from .session_manager import SessionManager
+from .artifact_manager import ArtifactManager
 from .state import AgentState
 from .tools.search_transcripts import SearchTranscriptsTool
 from .tools.generate_ship30 import GenerateShip30Tool
@@ -22,6 +23,7 @@ class GrowthAgent:
     def __init__(self, db: Session):
         self.db = db
         self.session_manager = SessionManager(db)
+        self.artifact_manager = ArtifactManager(db)
         self.search_tool = SearchTranscriptsTool(db)
         
         # Tools definitions for Anthropic SDK
@@ -93,11 +95,23 @@ class GrowthAgent:
             )
 
         # 3. Execute Selected Tool
+        artifact_id = None
         if state.selected_tool == "generate_ship30":
             result = ship30_tool.execute(topic, chunks, sources)
             answer = result["content"]
             word_count = result["word_count"]
             model = "llama3"
+            
+            if word_count > 0:
+                artifact = self.artifact_manager.create_artifact(
+                    session_id=state.session_id,
+                    artifact_type="ship30",
+                    title=result["title"],
+                    content=result["content"],
+                    word_count=result["word_count"],
+                    sources=sources
+                )
+                artifact_id = str(artifact.id)
         else:
             # Normal Chat via search_transcripts
             context_text = ""
@@ -120,7 +134,8 @@ class GrowthAgent:
             model=model,
             retrieval_count=len(chunks),
             tool_used=state.selected_tool,
-            word_count=word_count
+            word_count=word_count,
+            artifact_id=artifact_id
         )
 
     def _execute_anthropic_sdk(self, state: AgentState) -> ChatResponse:
@@ -200,6 +215,18 @@ class GrowthAgent:
                 ship30_tool = GenerateShip30Tool(AnthropicProvider())
                 result = ship30_tool.execute(tool_inputs["topic"], chunks, sources)
                 
+                artifact_id = None
+                if result["word_count"] > 0:
+                    artifact = self.artifact_manager.create_artifact(
+                        session_id=state.session_id,
+                        artifact_type="ship30",
+                        title=result["title"],
+                        content=result["content"],
+                        word_count=result["word_count"],
+                        sources=sources
+                    )
+                    artifact_id = str(artifact.id)
+                
                 return ChatResponse(
                     session_id=str(state.session_id),
                     answer=result["content"],
@@ -208,7 +235,8 @@ class GrowthAgent:
                     model=model,
                     retrieval_count=len(chunks),
                     tool_used=tool_name,
-                    word_count=result["word_count"]
+                    word_count=result["word_count"],
+                    artifact_id=artifact_id
                 )
         
         # No tool used

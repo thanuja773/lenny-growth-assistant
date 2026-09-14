@@ -17,8 +17,8 @@ class SearchResultItem(BaseModel):
 
 
 class RetrievalRequest(BaseModel):
-    query: str = Field(..., min_length=1, description="Semantic search query string")
-    top_k: Optional[int] = Field(None, ge=1, description="Maximum number of relevant chunks to retrieve")
+    query: str = Field(..., min_length=1, max_length=4000, description="Semantic search query string")
+    top_k: Optional[int] = Field(None, ge=1, le=20, description="Maximum number of relevant chunks to retrieve")
 
 
 class RetrievalResponse(BaseModel):

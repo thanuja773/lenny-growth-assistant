@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     
     DATABASE_URL: str = "postgresql+psycopg://postgres:postgres@127.0.0.1:5432/lenny_growth_assistant"
+    FRONTEND_URL: str = "http://localhost:3000"
     
     # LLM configurations
     LLM_PROVIDER: Optional[str] = "ollama"
